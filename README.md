@@ -10,6 +10,21 @@ OtpBridge 是一个 Windows 本地验证码桥接工具。
 这个工具很好地实现了：iPhone 收到验证码短信后，通过 iOS「快捷指令」把短信正文发送到 Windows 电脑；OtpBridge 会提取验证码、复制到剪贴板，并在右下角弹出提示。
 
 它不依赖微软「连接手机」、Phone Link 或任何微软官方手机同步软件。
+'''
+<div align="center">
+  <img src="OBW_1.png" alt="程序总览图" width="1700" />
+  <br>
+  程序总览图
+</div>
+'''
+
+'''
+<div align="center">
+  <img src="OBW_2.png" alt="验证码弹出图" width="700" />
+  <br>
+  验证码弹出图
+</div>
+'''
 
 ## 功能
 

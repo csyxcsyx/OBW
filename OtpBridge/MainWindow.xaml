@@ -127,7 +127,7 @@
                         Margin="0,20,0,0">
                     <StackPanel>
                         <TextBlock Text="iPhone 快捷指令配置教程" FontSize="21" FontWeight="SemiBold" />
-                        <TextBlock Text="下面按 iPhone 上的实际填写顺序来写。看不懂某一步时，先找界面里的同名文字：收到信息、获取 URL 内容、方法、头部、请求体。"
+                        <TextBlock Text="下面是给第一次使用快捷指令的用户看的详细步骤。不同 iOS 版本的文字可能略有差异，但要填的内容相同。"
                                    Foreground="{DynamicResource TextSecondaryBrush}"
                                    TextWrapping="Wrap"
                                    Margin="0,6,0,18" />
@@ -143,7 +143,6 @@
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
 
                             <Border Width="28" Height="28" CornerRadius="14" Background="{DynamicResource AccentBrush}" VerticalAlignment="Top">
@@ -151,7 +150,7 @@
                             </Border>
                             <StackPanel Grid.Column="1" Margin="0,0,0,16">
                                 <TextBlock Text="创建短信自动化" FontWeight="SemiBold" />
-                                <TextBlock Text="打开「快捷指令」App，进入「自动化」，新建「收到信息」。条件建议选择：我收到包含「验证码」的信息。完成后顶部应显示「作为输入接收信息」。"
+                                <TextBlock Text="打开 iPhone「快捷指令」App，点底部「自动化」，新建自动化并选择「收到信息」。条件建议设置为：我收到包含「验证码」的信息；然后选择「立即运行」。点击「下一步」后，选择「创建新快捷指令」。"
                                            Foreground="{DynamicResource TextSecondaryBrush}"
                                            TextWrapping="Wrap"
                                            Margin="0,5,0,0" />
@@ -161,8 +160,8 @@
                                 <TextBlock Text="2" Foreground="White" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center" />
                             </Border>
                             <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,0,0,16">
-                                <TextBlock Text="添加「获取 URL 内容」动作" FontWeight="SemiBold" />
-                                <TextBlock Text="在动作搜索框输入「获取 URL 内容」。URL 填主窗口上方的监听地址，方法选择 POST。不要填 0.0.0.0，要填电脑的局域网 IP 和当前显示的端口。"
+                                <TextBlock Text="添加「获取 URL 内容」" FontWeight="SemiBold" />
+                                <TextBlock Text="在动作搜索框搜索并添加「获取 URL 内容」。URL 填 http://XXXXXXX:18080/api/sms，也就是直接复制主窗口里的监听地址；方法选择 POST。"
                                            Foreground="{DynamicResource TextSecondaryBrush}"
                                            TextWrapping="Wrap"
                                            Margin="0,5,0,0" />
@@ -172,8 +171,8 @@
                                 <TextBlock Text="3" Foreground="White" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center" />
                             </Border>
                             <StackPanel Grid.Row="2" Grid.Column="1" Margin="0,0,0,16">
-                                <TextBlock Text="展开「头部」，添加两行 Header" FontWeight="SemiBold" />
-                                <TextBlock Text="第一行：Authorization = Bearer + 一个空格 + 主窗口里的 Token。第二行：Content-Type = application/json。"
+                                <TextBlock Text="填写头部 Header" FontWeight="SemiBold" />
+                                <TextBlock Text="展开「头部」，添加两行：（键） Authorization，（文本） Bearer &lt;主窗口里的 API Token&gt;；（键） Content-Type，（文本） application/json。注意：Bearer 后面必须有一个空格，例如：Bearer abcdefg123456。"
                                            Foreground="{DynamicResource TextSecondaryBrush}"
                                            TextWrapping="Wrap"
                                            Margin="0,5,0,0" />
@@ -183,8 +182,8 @@
                                 <TextBlock Text="4" Foreground="White" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center" />
                             </Border>
                             <StackPanel Grid.Row="3" Grid.Column="1" Margin="0,0,0,16">
-                                <TextBlock Text="请求体选择 JSON，只添加一个必填字段" FontWeight="SemiBold" />
-                                <TextBlock Text="点「添加新字段」，键填 message，值选择蓝色变量「输入快捷指令的信息」或「收到的信息正文」。这个值必须是短信全文。sender 和 receivedAt 可以不填。"
+                                <TextBlock Text="填写请求体 JSON" FontWeight="SemiBold" />
+                                <TextBlock Text="在「请求体」里选择 JSON。添加一个必填字段：（键） message，文本选择“输入快捷指令的信息”（点击「文本框」后，在输入框上方左右滑动找到“输入快捷指令的信息”并点击）。"
                                            Foreground="{DynamicResource TextSecondaryBrush}"
                                            TextWrapping="Wrap"
                                            Margin="0,5,0,0" />
@@ -193,20 +192,9 @@
                             <Border Grid.Row="4" Width="28" Height="28" CornerRadius="14" Background="{DynamicResource AccentBrush}" VerticalAlignment="Top">
                                 <TextBlock Text="5" Foreground="White" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center" />
                             </Border>
-                            <StackPanel Grid.Row="4" Grid.Column="1" Margin="0,0,0,16">
-                                <TextBlock Text="保存前先测网络" FontWeight="SemiBold" />
-                                <TextBlock Text="在 iPhone Safari 打开 http://你的电脑IP:18080/health，看到 {&quot;ok&quot;:true} 就说明手机能访问电脑。若打不开，通常是 IP 填错、不同 Wi-Fi、或 Windows 防火墙未放行。"
-                                           Foreground="{DynamicResource TextSecondaryBrush}"
-                                           TextWrapping="Wrap"
-                                           Margin="0,5,0,0" />
-                            </StackPanel>
-
-                            <Border Grid.Row="5" Width="28" Height="28" CornerRadius="14" Background="{DynamicResource AccentBrush}" VerticalAlignment="Top">
-                                <TextBlock Text="6" Foreground="White" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                            </Border>
-                            <StackPanel Grid.Row="5" Grid.Column="1">
-                                <TextBlock Text="测试一条验证码短信" FontWeight="SemiBold" />
-                                <TextBlock Text="给自己发一条类似「您的验证码是 123456，5 分钟内有效」的短信。成功后 Windows 会在右下角提示、剪贴板变成验证码、最近记录新增一行。"
+                            <StackPanel Grid.Row="4" Grid.Column="1">
+                                <TextBlock Text="先用固定文本测试" FontWeight="SemiBold" />
+                                <TextBlock Text="如果不确定短信变量是否选对，可以先把 message 的值临时改成固定文本：【测试】您的验证码是 123456，5分钟内有效。手动运行快捷指令后，Windows 应该会弹出提示、剪贴板变成 123456、最近记录新增一行。测试成功后，再把 message 的值改回“输入快捷指令的信息”。"
                                            Foreground="{DynamicResource TextSecondaryBrush}"
                                            TextWrapping="Wrap"
                                            Margin="0,5,0,0" />

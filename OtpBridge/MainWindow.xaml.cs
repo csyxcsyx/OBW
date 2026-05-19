@@ -172,12 +172,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private async Task<SmsProcessingResult> ProcessSmsAsync(SmsRequest request)
     {
-        return await Dispatcher.InvokeAsync(() => ProcessSmsOnUiThread(request));
-    }
-
-    private SmsProcessingResult ProcessSmsOnUiThread(SmsRequest request)
-    {
-        var extraction = OtpExtractor.Extract(request.Message, _settings.CustomCodeRegex);
+        var settings = _settings.Clone();
+        var extraction = OtpExtractor.Extract(request.Message, settings.CustomCodeRegex);
         if (!extraction.Success || string.IsNullOrWhiteSpace(extraction.Code))
         {
             return SmsProcessingResult.Fail(extraction.Error ?? "code not found");
@@ -185,31 +181,37 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
         var code = extraction.Code;
         var copied = false;
-        if (_settings.AutoCopy)
+        if (settings.AutoCopy)
         {
-            copied = TryCopyToClipboard(code);
+            copied = await CopyToClipboardAsync(code);
         }
 
         var toastText = "未启用";
-        if (_settings.ShowToast)
+        if (settings.ShowToast)
         {
             var message = copied ? $"收到验证码 {code}，已复制。" : $"收到验证码 {code}。";
-            _notifyIcon?.ShowBalloonTip(5000, "OtpBridge", message, Forms.ToolTipIcon.Info);
-            _ = Task.Run(() => _toastService.ShowToast("OtpBridge", message));
+            await Dispatcher.InvokeAsync(() =>
+            {
+                _notifyIcon?.ShowBalloonTip(5000, "OtpBridge", message, Forms.ToolTipIcon.Info);
+                _ = Task.Run(() => _toastService.ShowToast("OtpBridge", message));
+            });
             toastText = "已弹出";
         }
 
-        RecentRecords.Insert(0, new OtpRecord
+        await Dispatcher.InvokeAsync(() =>
         {
-            ReceivedAt = ParseReceivedAt(request.ReceivedAt),
-            Sender = string.IsNullOrWhiteSpace(request.Sender) ? "-" : request.Sender.Trim(),
-            Code = code,
-            Copied = copied,
-            ToastText = toastText
-        });
+            RecentRecords.Insert(0, new OtpRecord
+            {
+                ReceivedAt = ParseReceivedAt(request.ReceivedAt),
+                Sender = string.IsNullOrWhiteSpace(request.Sender) ? "-" : request.Sender.Trim(),
+                Code = code,
+                Copied = copied,
+                ToastText = toastText
+            });
 
-        TrimRecentRecords();
-        UpdateRecentSummary();
+            TrimRecentRecords();
+            UpdateRecentSummary();
+        });
 
         return SmsProcessingResult.Ok(code);
     }
@@ -237,7 +239,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         };
 
         _notifyIcon.ContextMenuStrip.Items.Add("打开设置", null, (_, _) => Dispatcher.Invoke(OpenSettings));
-        _notifyIcon.ContextMenuStrip.Items.Add("复制最近验证码", null, (_, _) => Dispatcher.Invoke(CopyRecentCode));
+        _notifyIcon.ContextMenuStrip.Items.Add("复制最近验证码", null, (_, _) => _ = Dispatcher.InvokeAsync(CopyRecentCodeAsync));
         _notifyIcon.ContextMenuStrip.Items.Add("查看最近记录", null, (_, _) => Dispatcher.Invoke(ShowMainWindow));
         _notifyIcon.ContextMenuStrip.Items.Add(new Forms.ToolStripSeparator());
         _startupMenuItem = new Forms.ToolStripMenuItem("开机自启动")
@@ -329,20 +331,12 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         System.Windows.Application.Current.Shutdown();
     }
 
-    private bool TryCopyToClipboard(string value)
+    private static async Task<bool> CopyToClipboardAsync(string value)
     {
-        try
-        {
-            System.Windows.Clipboard.SetText(value);
-            return true;
-        }
-        catch
-        {
-            return false;
-        }
+        return await ClipboardService.SetTextAsync(value);
     }
 
-    private void CopyRecentCode()
+    private async Task CopyRecentCodeAsync()
     {
         var recent = RecentRecords.FirstOrDefault();
         if (recent is null)
@@ -351,13 +345,17 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             return;
         }
 
-        if (TryCopyToClipboard(recent.Code))
+        if (await CopyToClipboardAsync(recent.Code))
         {
+            recent.Copied = true;
             _notifyIcon?.ShowBalloonTip(2000, "OtpBridge", $"已复制最近验证码 {recent.Code}。", Forms.ToolTipIcon.Info);
+            return;
         }
+
+        _notifyIcon?.ShowBalloonTip(2000, "OtpBridge", "复制失败，请稍后重试。", Forms.ToolTipIcon.Warning);
     }
 
-    private void CopyListeningAddress()
+    private async Task CopyListeningAddressAsync()
     {
         var address = ListeningAddresses
             .Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
@@ -368,7 +366,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             return;
         }
 
-        if (TryCopyToClipboard(address))
+        if (await CopyToClipboardAsync(address))
         {
             _notifyIcon?.ShowBalloonTip(2000, "OtpBridge", "已复制监听地址。", Forms.ToolTipIcon.Info);
         }
@@ -448,11 +446,11 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private void OpenSettings_Click(object sender, RoutedEventArgs e) => OpenSettings();
 
-    private void CopyAddress_Click(object sender, RoutedEventArgs e) => CopyListeningAddress();
+    private async void CopyAddress_Click(object sender, RoutedEventArgs e) => await CopyListeningAddressAsync();
 
-    private void CopyRecent_Click(object sender, RoutedEventArgs e) => CopyRecentCode();
+    private async void CopyRecent_Click(object sender, RoutedEventArgs e) => await CopyRecentCodeAsync();
 
-    private void CopyToken_Click(object sender, RoutedEventArgs e) => TryCopyToClipboard(_settings.ApiToken);
+    private async void CopyToken_Click(object sender, RoutedEventArgs e) => await CopyToClipboardAsync(_settings.ApiToken);
 
     private void ClearRecords_Click(object sender, RoutedEventArgs e)
     {
