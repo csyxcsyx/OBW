@@ -81,7 +81,7 @@
 
                         <StackPanel Margin="0,0,22,0">
                             <TextBlock Text="连接信息" FontSize="21" FontWeight="SemiBold" />
-                            <TextBlock Text="iPhone 快捷指令会把短信内容发送到这里。请优先复制 10.x、172.x、192.168.x 这类局域网地址。"
+                            <TextBlock Text="iPhone 快捷指令会把短信内容发送到这里。请优先复制 10.x、172.x、192.168.x 这类局域网地址；如果默认端口被占用，程序会自动换成可用端口，请以这里显示的地址为准。"
                                        Foreground="{DynamicResource TextSecondaryBrush}"
                                        TextWrapping="Wrap"
                                        Margin="0,6,0,16" />
@@ -162,7 +162,7 @@
                             </Border>
                             <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,0,0,16">
                                 <TextBlock Text="添加「获取 URL 内容」动作" FontWeight="SemiBold" />
-                                <TextBlock Text="在动作搜索框输入「获取 URL 内容」。URL 填主窗口上方的监听地址，方法选择 POST。不要填 0.0.0.0，要填电脑的局域网 IP。"
+                                <TextBlock Text="在动作搜索框输入「获取 URL 内容」。URL 填主窗口上方的监听地址，方法选择 POST。不要填 0.0.0.0，要填电脑的局域网 IP 和当前显示的端口。"
                                            Foreground="{DynamicResource TextSecondaryBrush}"
                                            TextWrapping="Wrap"
                                            Margin="0,5,0,0" />

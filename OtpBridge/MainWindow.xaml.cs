@@ -90,16 +90,32 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             return;
         }
 
+        if (_httpServer.RunningPort == _settings.Port)
+        {
+            StatusText = $"已监听 0.0.0.0:{_settings.Port}";
+            RefreshSettingsDisplay();
+            return;
+        }
+
         _isServerStarting = true;
-        StatusText = $"正在监听 0.0.0.0:{_settings.Port}...";
+        var requestedPort = _settings.Port;
+        StatusText = $"正在监听 0.0.0.0:{requestedPort}...";
         SetTrayText("OtpBridge 正在启动");
 
         try
         {
-            await _httpServer.StartAsync(_settings.Port);
-            StatusText = $"已监听 0.0.0.0:{_settings.Port}";
-            SetTrayText($"OtpBridge 已监听 {_settings.Port}");
-            StartupLog.Info($"HTTP server started on port {_settings.Port}.");
+            var result = await StartServerOnAvailablePortAsync(requestedPort);
+            StatusText = result.PortChanged
+                ? $"端口 {requestedPort} 被占用，已自动改用 0.0.0.0:{result.Port}"
+                : $"已监听 0.0.0.0:{result.Port}";
+            SetTrayText($"OtpBridge 已监听 {result.Port}");
+            StartupLog.Info($"HTTP server started on port {result.Port}.");
+
+            if (result.PortChanged)
+            {
+                var message = $"端口 {requestedPort} 被占用，已改用 {result.Port}。iPhone 快捷指令请使用新的监听地址。";
+                _notifyIcon?.ShowBalloonTip(6000, "OtpBridge", message, Forms.ToolTipIcon.Warning);
+            }
         }
         catch (Exception ex)
         {
@@ -113,6 +129,45 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         }
 
         RefreshSettingsDisplay();
+    }
+
+    private async Task<(int Port, bool PortChanged)> StartServerOnAvailablePortAsync(int requestedPort)
+    {
+        var port = requestedPort;
+        var portChanged = false;
+
+        if (!PortService.IsAvailable(port))
+        {
+            port = PortService.FindAvailablePort(port);
+            SavePortChange(port);
+            portChanged = true;
+            StartupLog.Info($"Port {requestedPort} is unavailable. Falling back to {port}.");
+        }
+
+        try
+        {
+            await _httpServer.StartAsync(port);
+            return (port, portChanged);
+        }
+        catch (Exception exception) when (PortService.LooksLikeAddressInUse(exception))
+        {
+            var fallbackPort = PortService.FindAvailablePort(port);
+            SavePortChange(fallbackPort);
+            StartupLog.Info($"Port {port} became unavailable while starting. Falling back to {fallbackPort}.");
+            await _httpServer.StartAsync(fallbackPort);
+            return (fallbackPort, true);
+        }
+    }
+
+    private void SavePortChange(int port)
+    {
+        if (_settings.Port == port)
+        {
+            return;
+        }
+
+        _settings.Port = port;
+        _configService.Save(_settings);
     }
 
     private async Task<SmsProcessingResult> ProcessSmsAsync(SmsRequest request)

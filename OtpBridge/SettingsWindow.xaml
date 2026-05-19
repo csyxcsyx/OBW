@@ -70,7 +70,7 @@
                     <TextBlock Grid.Row="2" Text="监听端口" VerticalAlignment="Center" />
                     <StackPanel Grid.Row="2" Grid.Column="1">
                         <TextBox x:Name="PortBox" />
-                        <TextBlock Text="默认 18080。修改后本地 HTTP 服务会自动按新端口监听。"
+                        <TextBlock Text="默认 18080。若端口已被其他程序占用，OtpBridge 会自动改用下一个可用端口，并在主窗口显示新地址。"
                                    Foreground="{DynamicResource TextSecondaryBrush}"
                                    TextWrapping="Wrap"
                                    Margin="0,5,0,0" />
