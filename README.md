@@ -1,6 +1,13 @@
 # OtpBridge
 
-OtpBridge 是一个 Windows 本地验证码桥接工具。iPhone 收到验证码短信后，通过 iOS「快捷指令」把短信正文发送到 Windows 电脑；OtpBridge 会提取验证码、复制到剪贴板，并在右下角弹出提示。
+OtpBridge 是一个 Windows 本地验证码桥接工具。
+
+## 写在前面的话
+
+关于为什么做这个工具：
+因为目前 Windows 端的「连接手机」软件与 iOS 端的交互并不好，所以......
+
+这个工具很好地实现了：iPhone 收到验证码短信后，通过 iOS「快捷指令」把短信正文发送到 Windows 电脑；OtpBridge 会提取验证码、复制到剪贴板，并在右下角弹出提示。
 
 它不依赖微软「连接手机」、Phone Link 或任何微软官方手机同步软件。
 
@@ -23,20 +30,7 @@ OtpBridge 是一个 Windows 本地验证码桥接工具。iPhone 收到验证码
 
 ### 普通用户：使用便携版
 
-发布后给用户一个压缩包：
-
-```text
-OtpBridge-Portable-win-x64.zip
-```
-
-用户这样使用：
-
-1. 解压到一个固定位置，例如 `D:\Apps\OtpBridge`。
-2. 双击 `OtpBridge.exe`。
-3. 第一次运行时，如果 Windows 防火墙弹窗，允许「专用网络」访问。
-4. 按主窗口里的教程配置 iPhone 快捷指令。
-
-便携版不需要安装。建议不要频繁移动 `OtpBridge.exe` 的位置；如果移动了，请重新打开程序并确认「开机自启动」仍然开启。
+直接在 Releases 找到最新的压缩包（.zip）下载，解压运行即可。
 
 ### 开发者：从源码生成 exe
 
@@ -127,9 +121,8 @@ http://<Windows局域网IP>:18080/health
 1. 打开 iPhone「快捷指令」App。
 2. 点底部「自动化」。
 3. 新建自动化，选择「收到信息」。
-4. 条件建议设置为：我收到包含「验证码」的信息。
-5. 也可以再创建几条条件，例如包含 `code`、`OTP`。
-6. 进入动作编辑页后，顶部应能看到类似「作为输入接收信息」的提示。
+4. 条件建议设置为：我收到包含「验证码」的信息；然后选择「立即运行」。
+5. 点击「下一步」后，选择「创建新快捷指令」。
 
 ### 2. 添加「获取 URL 内容」
 
@@ -142,7 +135,7 @@ http://<Windows局域网IP>:18080/health
 填写：
 
 ```text
-URL: http://<Windows局域网IP>:18080/api/sms
+URL: http://XXXXXXX:18080/api/sms
 方法: POST
 ```
 
@@ -153,8 +146,8 @@ URL: http://<Windows局域网IP>:18080/api/sms
 展开「头部」，添加两行：
 
 ```text
-Authorization    Bearer <主窗口里的 API Token>
-Content-Type     application/json
+键：Authorization    文本：Bearer <主窗口里的 API Token>
+键：Content-Type    文本：application/json
 ```
 
 注意：`Bearer` 后面必须有一个空格。
@@ -173,11 +166,11 @@ Authorization    Bearer abcdefg123456
 JSON
 ```
 
-添加一个必填字段：
+添加一个必填字段（点击「文本框」后，在输入框上方左右滑动找到“输入快捷指令的信息”并点击）：
 
 ```text
 键: message
-值: 输入快捷指令的信息
+文本: “输入快捷指令的信息”
 ```
 
 这里的「输入快捷指令的信息」就是自动化收到的短信正文。它通常会以蓝色变量块的形式出现。你也可能看到类似「收到的信息正文」「快捷指令输入」的变量，选择能代表短信全文的那个。
