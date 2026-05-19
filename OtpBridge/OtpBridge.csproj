@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ApplicationIcon>Assets\AppIcon.ico</ApplicationIcon>
+    <DefaultItemExcludes>$(DefaultItemExcludes);**\bin\**;**\obj\**;**\.publish-obj\**;**\.verify-obj\**;..\dist\**</DefaultItemExcludes>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Assets\AppIcon.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="**\bin\**;**\obj\**;**\.publish-obj\**;**\.verify-obj\**" />
+    <EmbeddedResource Remove="**\bin\**;**\obj\**;**\.publish-obj\**;**\.verify-obj\**" />
+    <None Remove="**\bin\**;**\obj\**;**\.publish-obj\**;**\.verify-obj\**" />
+    <Page Remove="**\bin\**;**\obj\**;**\.publish-obj\**;**\.verify-obj\**" />
+  </ItemGroup>
+</Project>

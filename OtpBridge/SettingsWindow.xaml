@@ -1,0 +1,125 @@
+<Window x:Class="OtpBridge.SettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="OtpBridge 设置"
+        Width="720"
+        Height="590"
+        MinWidth="600"
+        MinHeight="520"
+        Icon="Assets/AppIcon.ico"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="CanResize"
+        Background="{DynamicResource WindowBackgroundBrush}">
+    <DockPanel>
+        <Border DockPanel.Dock="Top" Padding="24,18" BorderBrush="{DynamicResource BorderBrushSoft}" BorderThickness="0,0,0,1">
+            <Border.Background>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                    <GradientStop Color="#F7FFF9" Offset="0" />
+                    <GradientStop Color="#E8F8ED" Offset="0.7" />
+                    <GradientStop Color="#FBFFFD" Offset="1" />
+                </LinearGradientBrush>
+            </Border.Background>
+            <StackPanel>
+                <TextBlock Text="设置" FontSize="23" FontWeight="SemiBold" />
+                <TextBlock Text="只保存配置，不保存短信全文。端口或 Token 改动后，需要同步更新 iPhone 快捷指令。"
+                           Foreground="{DynamicResource TextSecondaryBrush}"
+                           TextWrapping="Wrap"
+                           Margin="0,5,0,0" />
+            </StackPanel>
+        </Border>
+
+        <Border DockPanel.Dock="Bottom" Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrushSoft}" BorderThickness="0,1,0,0" Padding="16">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Content="保存" Click="Save_Click" />
+                <Button Content="取消" Click="Cancel_Click" Style="{StaticResource SecondaryButtonStyle}" Margin="0" />
+            </StackPanel>
+        </Border>
+
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <Border Margin="22"
+                    Background="{DynamicResource SurfaceBrush}"
+                    BorderBrush="{DynamicResource BorderBrushSoft}"
+                    BorderThickness="1"
+                    CornerRadius="14"
+                    Padding="22">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="150" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Text="设置文件" Grid.ColumnSpan="2" FontSize="17" FontWeight="SemiBold" />
+                    <TextBlock x:Name="ConfigPathText"
+                               Grid.Row="1"
+                               Grid.ColumnSpan="2"
+                               TextWrapping="Wrap"
+                               Foreground="{DynamicResource TextSecondaryBrush}"
+                               Margin="0,6,0,18" />
+
+                    <TextBlock Grid.Row="2" Text="监听端口" VerticalAlignment="Center" />
+                    <StackPanel Grid.Row="2" Grid.Column="1">
+                        <TextBox x:Name="PortBox" />
+                        <TextBlock Text="默认 18080。修改后本地 HTTP 服务会自动按新端口监听。"
+                                   Foreground="{DynamicResource TextSecondaryBrush}"
+                                   TextWrapping="Wrap"
+                                   Margin="0,5,0,0" />
+                    </StackPanel>
+
+                    <TextBlock Grid.Row="3" Text="API Token" VerticalAlignment="Top" Margin="0,18,0,0" />
+                    <StackPanel Grid.Row="3" Grid.Column="1" Margin="0,18,0,0">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBox x:Name="TokenBox" FontFamily="Consolas" />
+                            <Button Grid.Column="1" Content="自动生成" Click="GenerateToken_Click" Margin="10,0,0,0" />
+                        </Grid>
+                        <TextBlock Text="重新生成后，iPhone 快捷指令里的 Authorization 也要改成新的 Bearer Token。"
+                                   Foreground="{DynamicResource TextSecondaryBrush}"
+                                   TextWrapping="Wrap"
+                                   Margin="0,5,0,0" />
+                    </StackPanel>
+
+                    <TextBlock Grid.Row="4" Text="自动复制" VerticalAlignment="Center" Margin="0,20,0,0" />
+                    <CheckBox Grid.Row="4" Grid.Column="1" x:Name="AutoCopyBox" Content="收到验证码后写入剪贴板" VerticalAlignment="Center" Margin="0,20,0,0" />
+
+                    <TextBlock Grid.Row="5" Text="右下角通知" VerticalAlignment="Center" Margin="0,18,0,0" />
+                    <CheckBox Grid.Row="5" Grid.Column="1" x:Name="ShowToastBox" Content="收到验证码后弹出 Windows 提示" VerticalAlignment="Center" Margin="0,18,0,0" />
+
+                    <TextBlock Grid.Row="6" Text="开机自启动" VerticalAlignment="Center" Margin="0,18,0,0" />
+                    <CheckBox Grid.Row="6" Grid.Column="1" x:Name="StartWithWindowsBox" Content="登录 Windows 后自动启动并最小化到托盘" VerticalAlignment="Center" Margin="0,18,0,0" />
+
+                    <TextBlock Grid.Row="7" Text="最近记录数量" VerticalAlignment="Top" Margin="0,18,0,0" />
+                    <StackPanel Grid.Row="7" Grid.Column="1" Margin="0,18,0,0">
+                        <TextBox x:Name="RecentCountBox" />
+                        <TextBlock Text="只影响内存里的最近记录，不会把短信全文写入磁盘。"
+                                   Foreground="{DynamicResource TextSecondaryBrush}"
+                                   TextWrapping="Wrap"
+                                   Margin="0,5,0,0" />
+                    </StackPanel>
+
+                    <TextBlock Grid.Row="8" Text="自定义正则" VerticalAlignment="Top" Margin="0,18,0,0" />
+                    <StackPanel Grid.Row="8" Grid.Column="1" Margin="0,18,0,0">
+                        <TextBox x:Name="CustomRegexBox" MinHeight="76" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" />
+                        <TextBlock Text="可留空。若包含捕获组，将优先使用最后一个非空捕获组作为验证码。"
+                                   Foreground="{DynamicResource TextSecondaryBrush}"
+                                   TextWrapping="Wrap"
+                                   Margin="0,6,0,0" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </ScrollViewer>
+    </DockPanel>
+</Window>

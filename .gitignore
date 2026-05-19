@@ -1,0 +1,17 @@
+bin/
+obj/
+.vs/
+.vscode/
+*.user
+*.suo
+*.rsuser
+*.tmp
+*.log
+_tmp_obj/
+_tmp_bin/
+dist/
+build-obj/
+.publish-obj/
+.verify-obj/
+OtpBridge/.publish-obj/
+OtpBridge/.verify-obj/
