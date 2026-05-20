@@ -15,7 +15,7 @@ OtpBridge is for users who want to receive iPhone SMS verification codes quickly
 The default setup aims to be practical out of the box: the first launch generates an API Token, shows the LAN access address, and automatically copies incoming codes. Recent records are kept only in memory by default. Full SMS content is not written to disk.
 
 <div align="center">
-  <img src="OBW_1.png" alt="Application overview" width="1700" />
+  <img src="OBW_3.png" alt="Application overview" width="1700" />
   <br>
   Application overview
 </div>
@@ -23,7 +23,7 @@ The default setup aims to be practical out of the box: the first launch generate
 <br>
 
 <div align="center">
-  <img src="OBW_2.png" alt="Verification-code notification" width="700" />
+  <img src="OBW_4.png" alt="Verification-code notification" width="700" />
   <br>
   Verification-code notification
 </div>
