@@ -44,18 +44,34 @@
                 </Border>
 
                 <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                    <TextBlock Text="OtpBridge" FontSize="28" FontWeight="SemiBold" />
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="OtpBridge" FontSize="28" FontWeight="SemiBold" />
+                        <Border Background="{DynamicResource SurfaceMintBrush}"
+                                BorderBrush="{DynamicResource BorderBrushStrong}"
+                                BorderThickness="1"
+                                CornerRadius="8"
+                                Padding="8,3"
+                                Margin="12,6,0,4"
+                                VerticalAlignment="Center">
+                            <TextBlock x:Name="VersionText"
+                                       Text="v1.1"
+                                       FontFamily="Consolas"
+                                       FontSize="13"
+                                       FontWeight="SemiBold"
+                                       Foreground="{DynamicResource AccentHoverBrush}" />
+                        </Border>
+                    </StackPanel>
                     <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
                         <Ellipse Width="8" Height="8" Fill="{DynamicResource AccentBrush}" VerticalAlignment="Center" Margin="0,0,8,0" />
                         <TextBlock Text="{Binding StatusText}" Foreground="{DynamicResource TextSecondaryBrush}" />
-                        <TextBlock Text="  ·  托盘常驻，收到验证码后自动复制" Foreground="{DynamicResource TextSecondaryBrush}" />
+                        <TextBlock x:Name="StatusSuffixText" Text="  ·  托盘常驻，收到验证码后自动复制" Foreground="{DynamicResource TextSecondaryBrush}" />
                     </StackPanel>
                 </StackPanel>
 
                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
-                    <Button Content="打开设置" Click="OpenSettings_Click" />
-                    <Button Content="复制地址" Click="CopyAddress_Click" Style="{StaticResource SecondaryButtonStyle}" />
-                    <Button Content="复制最近验证码" Click="CopyRecent_Click" Style="{StaticResource SecondaryButtonStyle}" Margin="0" />
+                    <Button x:Name="OpenSettingsButton" Content="打开设置" Click="OpenSettings_Click" />
+                    <Button x:Name="CopyAddressButton" Content="复制地址" Click="CopyAddress_Click" Style="{StaticResource SecondaryButtonStyle}" />
+                    <Button x:Name="CopyRecentButton" Content="复制最近验证码" Click="CopyRecent_Click" Style="{StaticResource SecondaryButtonStyle}" Margin="0" />
                 </StackPanel>
             </Grid>
         </Border>
@@ -80,12 +96,24 @@
                         </Grid.ColumnDefinitions>
 
                         <StackPanel Margin="0,0,22,0">
-                            <TextBlock Text="连接信息" FontSize="21" FontWeight="SemiBold" />
-                            <TextBlock Text="iPhone 快捷指令会把短信内容发送到这里。请优先复制 10.x、172.x、192.168.x 这类局域网地址；如果默认端口被占用，程序会自动换成可用端口，请以这里显示的地址为准。"
+                            <TextBlock x:Name="ConnectionTitleText" Text="连接信息" FontSize="21" FontWeight="SemiBold" />
+                            <Border Background="#FFF7D6"
+                                    BorderBrush="#E5B94C"
+                                    BorderThickness="1"
+                                    CornerRadius="8"
+                                    Padding="12,9"
+                                    Margin="0,10,0,12">
+                                <TextBlock x:Name="LanReminderText"
+                                           Text="重要提醒：iPhone 和 Windows 电脑必须在同一个局域网内，否则快捷指令无法访问本程序。"
+                                           Foreground="#6B4E00"
+                                           FontWeight="SemiBold"
+                                           TextWrapping="Wrap" />
+                            </Border>
+                            <TextBlock x:Name="ConnectionDescriptionText" Text="iPhone 快捷指令会把短信内容发送到这里。请优先复制 10.x、172.x、192.168.x 这类局域网地址；如果默认端口被占用，程序会自动换成可用端口，请以这里显示的地址为准。"
                                        Foreground="{DynamicResource TextSecondaryBrush}"
                                        TextWrapping="Wrap"
                                        Margin="0,6,0,16" />
-                            <TextBlock Text="监听地址" FontWeight="SemiBold" Margin="0,0,0,8" />
+                            <TextBlock x:Name="AddressLabelText" Text="监听地址" FontWeight="SemiBold" Margin="0,0,0,8" />
                             <TextBox x:Name="AddressesBox"
                                      Text="{Binding ListeningAddresses, Mode=OneWay}"
                                      IsReadOnly="True"
@@ -103,8 +131,8 @@
                                 CornerRadius="12"
                                 Padding="18">
                             <StackPanel>
-                                <TextBlock Text="API Token" FontSize="17" FontWeight="SemiBold" />
-                                <TextBlock Text="这是 iPhone 请求的通行口令。不要发给不信任的人，重新生成后需要同步更新快捷指令。"
+                                <TextBlock x:Name="TokenTitleText" Text="API Token" FontSize="17" FontWeight="SemiBold" />
+                                <TextBlock x:Name="TokenDescriptionText" Text="这是 iPhone 请求的通行口令。不要发给不信任的人，重新生成后需要同步更新快捷指令。"
                                            Foreground="{DynamicResource TextSecondaryBrush}"
                                            TextWrapping="Wrap"
                                            Margin="0,6,0,12" />
@@ -112,7 +140,7 @@
                                          IsReadOnly="True"
                                          FontFamily="Consolas"
                                          Margin="0,0,0,14" />
-                                <Button Content="复制 Token" Click="CopyToken_Click" HorizontalAlignment="Left" Margin="0" />
+                                <Button x:Name="CopyTokenButton" Content="复制 Token" Click="CopyToken_Click" HorizontalAlignment="Left" Margin="0" />
                             </StackPanel>
                         </Border>
                     </Grid>
@@ -126,8 +154,8 @@
                         Padding="24"
                         Margin="0,20,0,0">
                     <StackPanel>
-                        <TextBlock Text="iPhone 快捷指令配置教程" FontSize="21" FontWeight="SemiBold" />
-                        <TextBlock Text="下面是给第一次使用快捷指令的用户看的详细步骤。不同 iOS 版本的文字可能略有差异，但要填的内容相同。"
+                        <TextBlock x:Name="GuideTitleText" Text="iPhone 快捷指令配置教程" FontSize="21" FontWeight="SemiBold" />
+                        <TextBlock x:Name="GuideDescriptionText" Text="下面是给第一次使用快捷指令的用户看的详细步骤。不同 iOS 版本的文字可能略有差异，但要填的内容相同。"
                                    Foreground="{DynamicResource TextSecondaryBrush}"
                                    TextWrapping="Wrap"
                                    Margin="0,6,0,18" />
@@ -149,8 +177,8 @@
                                 <TextBlock Text="1" Foreground="White" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center" />
                             </Border>
                             <StackPanel Grid.Column="1" Margin="0,0,0,16">
-                                <TextBlock Text="创建短信自动化" FontWeight="SemiBold" />
-                                <TextBlock Text="打开 iPhone「快捷指令」App，点底部「自动化」，新建自动化并选择「收到信息」。条件建议设置为：我收到包含「验证码」的信息；然后选择「立即运行」。点击「下一步」后，选择「创建新快捷指令」。"
+                                <TextBlock x:Name="Step1TitleText" Text="创建短信自动化" FontWeight="SemiBold" />
+                                <TextBlock x:Name="Step1BodyText" Text="打开 iPhone「快捷指令」App，点底部「自动化」，新建自动化并选择「收到信息」。条件建议设置为：我收到包含「验证码」的信息；然后选择「立即运行」。点击「下一步」后，选择「创建新快捷指令」。"
                                            Foreground="{DynamicResource TextSecondaryBrush}"
                                            TextWrapping="Wrap"
                                            Margin="0,5,0,0" />
@@ -160,8 +188,8 @@
                                 <TextBlock Text="2" Foreground="White" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center" />
                             </Border>
                             <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,0,0,16">
-                                <TextBlock Text="添加「获取 URL 内容」" FontWeight="SemiBold" />
-                                <TextBlock Text="在动作搜索框搜索并添加「获取 URL 内容」。URL 填 http://XXXXXXX:18080/api/sms，也就是直接复制主窗口里的监听地址；方法选择 POST。"
+                                <TextBlock x:Name="Step2TitleText" Text="添加「获取 URL 内容」" FontWeight="SemiBold" />
+                                <TextBlock x:Name="Step2BodyText" Text="在动作搜索框搜索并添加「获取 URL 内容」。URL 填 http://XXXXXXX:18080/api/sms，也就是直接复制主窗口里的监听地址；方法选择 POST。"
                                            Foreground="{DynamicResource TextSecondaryBrush}"
                                            TextWrapping="Wrap"
                                            Margin="0,5,0,0" />
@@ -171,8 +199,8 @@
                                 <TextBlock Text="3" Foreground="White" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center" />
                             </Border>
                             <StackPanel Grid.Row="2" Grid.Column="1" Margin="0,0,0,16">
-                                <TextBlock Text="填写头部 Header" FontWeight="SemiBold" />
-                                <TextBlock Text="展开「头部」，添加两行：（键） Authorization，（文本） Bearer &lt;主窗口里的 API Token&gt;；（键） Content-Type，（文本） application/json。注意：Bearer 后面必须有一个空格，例如：Bearer abcdefg123456。"
+                                <TextBlock x:Name="Step3TitleText" Text="填写头部 Header" FontWeight="SemiBold" />
+                                <TextBlock x:Name="Step3BodyText" Text="展开「头部」，添加两行：（键） Authorization，（文本） Bearer &lt;主窗口里的 API Token&gt;；（键） Content-Type，（文本） application/json。注意：Bearer 后面必须有一个空格，例如：Bearer abcdefg123456。"
                                            Foreground="{DynamicResource TextSecondaryBrush}"
                                            TextWrapping="Wrap"
                                            Margin="0,5,0,0" />
@@ -182,8 +210,8 @@
                                 <TextBlock Text="4" Foreground="White" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center" />
                             </Border>
                             <StackPanel Grid.Row="3" Grid.Column="1" Margin="0,0,0,16">
-                                <TextBlock Text="填写请求体 JSON" FontWeight="SemiBold" />
-                                <TextBlock Text="在「请求体」里选择 JSON。添加一个必填字段：（键） message，文本选择“输入快捷指令的信息”（点击「文本框」后，在输入框上方左右滑动找到“输入快捷指令的信息”并点击）。"
+                                <TextBlock x:Name="Step4TitleText" Text="填写请求体 JSON" FontWeight="SemiBold" />
+                                <TextBlock x:Name="Step4BodyText" Text="在「请求体」里选择 JSON。添加一个必填字段：（键） message，文本选择“输入快捷指令的信息”（点击「文本框」后，在输入框上方左右滑动找到“输入快捷指令的信息”并点击）。"
                                            Foreground="{DynamicResource TextSecondaryBrush}"
                                            TextWrapping="Wrap"
                                            Margin="0,5,0,0" />
@@ -193,8 +221,8 @@
                                 <TextBlock Text="5" Foreground="White" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center" />
                             </Border>
                             <StackPanel Grid.Row="4" Grid.Column="1">
-                                <TextBlock Text="先用固定文本测试" FontWeight="SemiBold" />
-                                <TextBlock Text="如果不确定短信变量是否选对，可以先把 message 的值临时改成固定文本：【测试】您的验证码是 123456，5分钟内有效。手动运行快捷指令后，Windows 应该会弹出提示、剪贴板变成 123456、最近记录新增一行。测试成功后，再把 message 的值改回“输入快捷指令的信息”。"
+                                <TextBlock x:Name="Step5TitleText" Text="先用固定文本测试" FontWeight="SemiBold" />
+                                <TextBlock x:Name="Step5BodyText" Text="如果不确定短信变量是否选对，可以先把 message 的值临时改成固定文本：【测试】您的验证码是 123456，5分钟内有效。手动运行快捷指令后，Windows 应该会弹出提示、剪贴板变成 123456、最近记录新增一行。测试成功后，再把 message 的值改回“输入快捷指令的信息”。"
                                            Foreground="{DynamicResource TextSecondaryBrush}"
                                            TextWrapping="Wrap"
                                            Margin="0,5,0,0" />
@@ -221,10 +249,10 @@
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
                             <StackPanel>
-                                <TextBlock Text="最近记录" FontSize="21" FontWeight="SemiBold" />
+                                <TextBlock x:Name="RecentTitleText" Text="最近记录" FontSize="21" FontWeight="SemiBold" />
                                 <TextBlock Text="{Binding RecentSummary}" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,4,0,0" />
                             </StackPanel>
-                            <Button Grid.Column="1" Content="清空记录" Click="ClearRecords_Click" VerticalAlignment="Center" Style="{StaticResource SecondaryButtonStyle}" Margin="0" />
+                            <Button x:Name="ClearRecordsButton" Grid.Column="1" Content="清空记录" Click="ClearRecords_Click" VerticalAlignment="Center" Style="{StaticResource SecondaryButtonStyle}" Margin="0" />
                         </Grid>
 
                         <DataGrid Grid.Row="1"
@@ -240,11 +268,11 @@
                                   Margin="0,18,0,0"
                                   MinHeight="240">
                             <DataGrid.Columns>
-                                <DataGridTextColumn Header="时间" Binding="{Binding ReceivedAtText}" Width="170" />
-                                <DataGridTextColumn Header="发送方" Binding="{Binding Sender}" Width="150" />
-                                <DataGridTextColumn Header="验证码" Binding="{Binding Code}" Width="140" />
-                                <DataGridTextColumn Header="复制状态" Binding="{Binding CopiedText}" Width="120" />
-                                <DataGridTextColumn Header="通知" Binding="{Binding ToastText}" Width="*" />
+                                <DataGridTextColumn x:Name="TimeColumn" Header="时间" Binding="{Binding ReceivedAtText}" Width="170" />
+                                <DataGridTextColumn x:Name="SenderColumn" Header="发送方" Binding="{Binding Sender}" Width="150" />
+                                <DataGridTextColumn x:Name="CodeColumn" Header="验证码" Binding="{Binding Code}" Width="140" />
+                                <DataGridTextColumn x:Name="CopiedColumn" Header="复制状态" Binding="{Binding CopiedText}" Width="120" />
+                                <DataGridTextColumn x:Name="ToastColumn" Header="通知" Binding="{Binding ToastText}" Width="*" />
                             </DataGrid.Columns>
                         </DataGrid>
                     </Grid>

@@ -9,7 +9,7 @@ public static class StartupLog
 
     public static string DirectoryPath { get; } = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-        "OtpBridge");
+        AppInfo.Name);
 
     public static string FilePath => Path.Combine(DirectoryPath, "startup.log");
 

@@ -17,7 +17,7 @@ public sealed class ConfigService
 
     public string ConfigDirectory { get; } = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-        "OtpBridge");
+        AppInfo.Name);
 
     public string ConfigPath => Path.Combine(ConfigDirectory, "config.json");
 
@@ -51,6 +51,36 @@ public sealed class ConfigService
         }
 
         return settings;
+    }
+
+    public static string LoadLanguageOrDefault()
+    {
+        var configPath = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            AppInfo.Name,
+            "config.json");
+
+        if (!File.Exists(configPath))
+        {
+            return LocalizationService.DefaultLanguage;
+        }
+
+        try
+        {
+            var json = File.ReadAllText(configPath, Encoding.UTF8);
+            using var document = JsonDocument.Parse(json);
+            if (document.RootElement.TryGetProperty("language", out var languageElement) &&
+                languageElement.ValueKind == JsonValueKind.String)
+            {
+                return LocalizationService.NormalizeLanguage(languageElement.GetString());
+            }
+        }
+        catch
+        {
+            return LocalizationService.DefaultLanguage;
+        }
+
+        return LocalizationService.DefaultLanguage;
     }
 
     public void Save(AppSettings settings)
@@ -95,6 +125,13 @@ public sealed class ConfigService
         if (settings.RecentRecordCount < 1)
         {
             settings.RecentRecordCount = AppSettings.DefaultRecentRecordCount;
+            changed = true;
+        }
+
+        var language = LocalizationService.NormalizeLanguage(settings.Language);
+        if (!string.Equals(settings.Language, language, StringComparison.Ordinal))
+        {
+            settings.Language = language;
             changed = true;
         }
 

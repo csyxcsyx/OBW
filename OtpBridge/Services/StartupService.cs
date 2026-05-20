@@ -7,7 +7,7 @@ namespace OtpBridge.Services;
 public static class StartupService
 {
     private const string RunKeyPath = @"Software\Microsoft\Windows\CurrentVersion\Run";
-    private const string ValueName = "OtpBridge";
+    private static readonly string ValueName = AppInfo.Name;
 
     public static bool Apply(bool enabled)
     {
@@ -57,12 +57,12 @@ public static class StartupService
         var processPath = Environment.ProcessPath;
         if (!string.IsNullOrWhiteSpace(processPath) &&
             Path.GetExtension(processPath).Equals(".exe", StringComparison.OrdinalIgnoreCase) &&
-            Path.GetFileNameWithoutExtension(processPath).Contains("OtpBridge", StringComparison.OrdinalIgnoreCase))
+            Path.GetFileNameWithoutExtension(processPath).Contains(AppInfo.Name, StringComparison.OrdinalIgnoreCase))
         {
             return $"\"{processPath}\" --minimized";
         }
 
-        var assemblyPath = Path.Combine(AppContext.BaseDirectory, "OtpBridge.dll");
+        var assemblyPath = Path.Combine(AppContext.BaseDirectory, $"{AppInfo.Name}.dll");
         if (File.Exists(assemblyPath))
         {
             var dotnetPath = FindDotnetPath();

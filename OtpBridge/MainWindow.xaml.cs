@@ -19,8 +19,12 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private AppSettings _settings;
     private bool _exitRequested;
     private bool _isServerStarting;
+    private bool _isRestoringWindowBounds;
+    private Rect? _lastNormalBounds;
     private string _listeningAddresses = string.Empty;
     private string _statusText = "正在启动...";
+    private string _statusKey = "Main.Status.Starting";
+    private object?[] _statusArgs = [];
     private string _recentSummary = "尚未收到验证码。";
 
     public MainWindow(bool startMinimized = false)
@@ -38,8 +42,13 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
         DataContext = this;
         TrySetupTrayIcon();
+        Title = AppInfo.WindowTitle;
+        ApplyLocalization();
         RefreshSettingsDisplay();
 
+        LocationChanged += (_, _) => CaptureCurrentNormalBounds();
+        SizeChanged += (_, _) => CaptureCurrentNormalBounds();
+        Loaded += (_, _) => CaptureCurrentNormalBounds();
         Loaded += async (_, _) => await StartServerAsync();
         Loaded += (_, _) => ApplyInitialWindowState();
         StartupLog.Info("MainWindow constructor finished.");
@@ -92,35 +101,41 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
         if (_httpServer.RunningPort == _settings.Port)
         {
-            StatusText = $"已监听 0.0.0.0:{_settings.Port}";
+            SetStatus("Main.Status.Listening", _settings.Port);
             RefreshSettingsDisplay();
             return;
         }
 
         _isServerStarting = true;
         var requestedPort = _settings.Port;
-        StatusText = $"正在监听 0.0.0.0:{requestedPort}...";
-        SetTrayText("OtpBridge 正在启动");
+        SetStatus("Main.Status.StartingListen", requestedPort);
+        SetTrayText(Text("Main.Tray.Starting"));
 
         try
         {
             var result = await StartServerOnAvailablePortAsync(requestedPort);
-            StatusText = result.PortChanged
-                ? $"端口 {requestedPort} 被占用，已自动改用 0.0.0.0:{result.Port}"
-                : $"已监听 0.0.0.0:{result.Port}";
-            SetTrayText($"OtpBridge 已监听 {result.Port}");
+            if (result.PortChanged)
+            {
+                SetStatus("Main.Status.PortChanged", requestedPort, result.Port);
+            }
+            else
+            {
+                SetStatus("Main.Status.Listening", result.Port);
+            }
+
+            SetTrayText(FormatText("Main.Tray.Listening", result.Port));
             StartupLog.Info($"HTTP server started on port {result.Port}.");
 
             if (result.PortChanged)
             {
-                var message = $"端口 {requestedPort} 被占用，已改用 {result.Port}。iPhone 快捷指令请使用新的监听地址。";
-                _notifyIcon?.ShowBalloonTip(6000, "OtpBridge", message, Forms.ToolTipIcon.Warning);
+                var message = FormatText("Main.PortChanged.Notification", requestedPort, result.Port);
+                ShowTrayTip(6000, message, Forms.ToolTipIcon.Warning);
             }
         }
         catch (Exception ex)
         {
-            StatusText = $"监听失败：{ex.Message}";
-            SetTrayText("OtpBridge 监听失败");
+            SetStatus("Main.Status.ListenFailed", ex.Message);
+            SetTrayText(Text("Main.Tray.ListenFailed"));
             StartupLog.Error("HTTP server startup failed.", ex);
         }
         finally
@@ -186,28 +201,32 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             copied = await CopyToClipboardAsync(code);
         }
 
-        var toastText = "未启用";
+        var toastKey = "Main.Toast.Disabled";
         if (settings.ShowToast)
         {
-            var message = copied ? $"收到验证码 {code}，已复制。" : $"收到验证码 {code}。";
+            var message = copied
+                ? LocalizationService.Format(settings.Language, "Main.Toast.ReceivedCopied", code)
+                : LocalizationService.Format(settings.Language, "Main.Toast.Received", code);
             await Dispatcher.InvokeAsync(() =>
             {
-                _notifyIcon?.ShowBalloonTip(5000, "OtpBridge", message, Forms.ToolTipIcon.Info);
-                _ = Task.Run(() => _toastService.ShowToast("OtpBridge", message));
+                ShowTrayTip(5000, message, Forms.ToolTipIcon.Info);
+                _ = Task.Run(() => _toastService.ShowToast(AppInfo.Name, message));
             });
-            toastText = "已弹出";
+            toastKey = "Main.Toast.Shown";
         }
 
         await Dispatcher.InvokeAsync(() =>
         {
-            RecentRecords.Insert(0, new OtpRecord
+            var record = new OtpRecord
             {
                 ReceivedAt = ParseReceivedAt(request.ReceivedAt),
                 Sender = string.IsNullOrWhiteSpace(request.Sender) ? "-" : request.Sender.Trim(),
                 Code = code,
                 Copied = copied,
-                ToastText = toastText
-            });
+                ToastKey = toastKey
+            };
+            record.ApplyLanguage(_settings.Language);
+            RecentRecords.Insert(0, record);
 
             TrimRecentRecords();
             UpdateRecentSummary();
@@ -233,16 +252,16 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         _notifyIcon = new Forms.NotifyIcon
         {
             Icon = GetTrayIcon(),
-            Text = "OtpBridge",
+            Text = AppInfo.Name,
             Visible = true,
             ContextMenuStrip = new Forms.ContextMenuStrip()
         };
 
-        _notifyIcon.ContextMenuStrip.Items.Add("打开设置", null, (_, _) => Dispatcher.Invoke(OpenSettings));
-        _notifyIcon.ContextMenuStrip.Items.Add("复制最近验证码", null, (_, _) => _ = Dispatcher.InvokeAsync(CopyRecentCodeAsync));
-        _notifyIcon.ContextMenuStrip.Items.Add("查看最近记录", null, (_, _) => Dispatcher.Invoke(ShowMainWindow));
+        _notifyIcon.ContextMenuStrip.Items.Add(Text("Main.Tray.OpenSettings"), null, (_, _) => Dispatcher.Invoke(OpenSettings));
+        _notifyIcon.ContextMenuStrip.Items.Add(Text("Main.Tray.CopyRecent"), null, (_, _) => _ = Dispatcher.InvokeAsync(CopyRecentCodeAsync));
+        _notifyIcon.ContextMenuStrip.Items.Add(Text("Main.Tray.ViewRecent"), null, (_, _) => Dispatcher.Invoke(ShowMainWindow));
         _notifyIcon.ContextMenuStrip.Items.Add(new Forms.ToolStripSeparator());
-        _startupMenuItem = new Forms.ToolStripMenuItem("开机自启动")
+        _startupMenuItem = new Forms.ToolStripMenuItem(Text("Main.Tray.StartWithWindows"))
         {
             CheckOnClick = true,
             Checked = _settings.StartWithWindows
@@ -250,9 +269,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         _startupMenuItem.Click += (_, _) => Dispatcher.Invoke(ToggleStartupFromTray);
         _notifyIcon.ContextMenuStrip.Items.Add(_startupMenuItem);
 
-        _notifyIcon.ContextMenuStrip.Items.Add("退出", null, (_, _) => Dispatcher.Invoke(ExitApplication));
+        _notifyIcon.ContextMenuStrip.Items.Add(Text("Main.Tray.Exit"), null, (_, _) => Dispatcher.Invoke(ExitApplication));
         _notifyIcon.DoubleClick += (_, _) => Dispatcher.Invoke(ShowMainWindow);
-        SetTrayText("OtpBridge");
+        SetTrayText(AppInfo.Name);
     }
 
     private void RefreshSettingsDisplay()
@@ -290,6 +309,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         _settings = window.Settings.Clone();
         _configService.Save(_settings);
         StartupService.Apply(_settings.StartWithWindows);
+        ApplyLocalization();
         UpdateTrayMenuState();
         TrimRecentRecords();
         RefreshSettingsDisplay();
@@ -302,9 +322,17 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private void ShowMainWindow()
     {
-        Show();
-        WindowState = WindowState.Normal;
+        var wasMinimized = WindowState == WindowState.Minimized;
+
         ShowInTaskbar = true;
+        Show();
+
+        if (wasMinimized)
+        {
+            WindowState = WindowState.Normal;
+            RestoreLastNormalBounds();
+        }
+
         Activate();
     }
 
@@ -318,6 +346,57 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         WindowState = WindowState.Minimized;
         ShowInTaskbar = false;
         Hide();
+    }
+
+    private void CaptureCurrentNormalBounds()
+    {
+        if (_isRestoringWindowBounds || !IsLoaded || WindowState != WindowState.Normal)
+        {
+            return;
+        }
+
+        if (Width <= 0 || Height <= 0 || double.IsNaN(Left) || double.IsNaN(Top))
+        {
+            return;
+        }
+
+        _lastNormalBounds = new Rect(Left, Top, Width, Height);
+    }
+
+    private void CaptureRestoreBounds()
+    {
+        if (RestoreBounds.Width <= 0 || RestoreBounds.Height <= 0)
+        {
+            return;
+        }
+
+        _lastNormalBounds = RestoreBounds;
+    }
+
+    private void RestoreLastNormalBounds()
+    {
+        if (_lastNormalBounds is not { } bounds)
+        {
+            return;
+        }
+
+        if (bounds.Width < MinWidth || bounds.Height < MinHeight)
+        {
+            return;
+        }
+
+        _isRestoringWindowBounds = true;
+        try
+        {
+            Left = bounds.Left;
+            Top = bounds.Top;
+            Width = bounds.Width;
+            Height = bounds.Height;
+        }
+        finally
+        {
+            _isRestoringWindowBounds = false;
+        }
     }
 
     private void ExitApplication()
@@ -341,18 +420,18 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         var recent = RecentRecords.FirstOrDefault();
         if (recent is null)
         {
-            _notifyIcon?.ShowBalloonTip(2000, "OtpBridge", "暂无最近验证码。", Forms.ToolTipIcon.Info);
+            ShowTrayTip(2000, Text("Main.Copy.NoRecent"), Forms.ToolTipIcon.Info);
             return;
         }
 
         if (await CopyToClipboardAsync(recent.Code))
         {
             recent.Copied = true;
-            _notifyIcon?.ShowBalloonTip(2000, "OtpBridge", $"已复制最近验证码 {recent.Code}。", Forms.ToolTipIcon.Info);
+            ShowTrayTip(2000, FormatText("Main.Copy.RecentCopied", recent.Code), Forms.ToolTipIcon.Info);
             return;
         }
 
-        _notifyIcon?.ShowBalloonTip(2000, "OtpBridge", "复制失败，请稍后重试。", Forms.ToolTipIcon.Warning);
+        ShowTrayTip(2000, Text("Main.Copy.Failed"), Forms.ToolTipIcon.Warning);
     }
 
     private async Task CopyListeningAddressAsync()
@@ -368,7 +447,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
         if (await CopyToClipboardAsync(address))
         {
-            _notifyIcon?.ShowBalloonTip(2000, "OtpBridge", "已复制监听地址。", Forms.ToolTipIcon.Info);
+            ShowTrayTip(2000, Text("Main.Copy.AddressCopied"), Forms.ToolTipIcon.Info);
         }
     }
 
@@ -396,8 +475,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private void UpdateRecentSummary()
     {
         RecentSummary = RecentRecords.Count == 0
-            ? "尚未收到验证码。"
-            : $"内存中保留最近 {RecentRecords.Count} 条，设置上限 {_settings.RecentRecordCount} 条。";
+            ? Text("Main.Recent.Empty")
+            : FormatText("Main.Recent.Summary", RecentRecords.Count, _settings.RecentRecordCount);
     }
 
     private static DateTimeOffset ParseReceivedAt(string? value)
@@ -421,13 +500,101 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         _notifyIcon.Text = value.Length <= 63 ? value : $"{value[..60]}...";
     }
 
+    private void ShowTrayTip(int timeout, string message, Forms.ToolTipIcon icon)
+    {
+        _notifyIcon?.ShowBalloonTip(timeout, AppInfo.Name, message, icon);
+    }
+
     private void UpdateTrayMenuState()
     {
         if (_startupMenuItem is not null)
         {
             _startupMenuItem.Checked = _settings.StartWithWindows;
+            _startupMenuItem.Text = Text("Main.Tray.StartWithWindows");
         }
 
+        if (_notifyIcon?.ContextMenuStrip is null)
+        {
+            return;
+        }
+
+        var items = _notifyIcon.ContextMenuStrip.Items;
+        if (items.Count >= 6)
+        {
+            items[0].Text = Text("Main.Tray.OpenSettings");
+            items[1].Text = Text("Main.Tray.CopyRecent");
+            items[2].Text = Text("Main.Tray.ViewRecent");
+            items[5].Text = Text("Main.Tray.Exit");
+        }
+    }
+
+    private void ApplyLocalization()
+    {
+        Title = AppInfo.WindowTitle;
+        VersionText.Text = AppInfo.DisplayVersion;
+        StatusSuffixText.Text = Text("Main.StatusSuffix");
+        OpenSettingsButton.Content = Text("Main.Button.OpenSettings");
+        CopyAddressButton.Content = Text("Main.Button.CopyAddress");
+        CopyRecentButton.Content = Text("Main.Button.CopyRecent");
+        ConnectionTitleText.Text = Text("Main.Connection.Title");
+        LanReminderText.Text = Text("Main.Connection.LanReminder");
+        ConnectionDescriptionText.Text = Text("Main.Connection.Description");
+        AddressLabelText.Text = Text("Main.Address.Label");
+        TokenTitleText.Text = Text("Main.Token.Title");
+        TokenDescriptionText.Text = Text("Main.Token.Description");
+        CopyTokenButton.Content = Text("Main.Button.CopyToken");
+        GuideTitleText.Text = Text("Main.Guide.Title");
+        GuideDescriptionText.Text = Text("Main.Guide.Description");
+        Step1TitleText.Text = Text("Main.Guide.Step1.Title");
+        Step1BodyText.Text = Text("Main.Guide.Step1.Body");
+        Step2TitleText.Text = Text("Main.Guide.Step2.Title");
+        Step2BodyText.Text = Text("Main.Guide.Step2.Body");
+        Step3TitleText.Text = Text("Main.Guide.Step3.Title");
+        Step3BodyText.Text = Text("Main.Guide.Step3.Body");
+        Step4TitleText.Text = Text("Main.Guide.Step4.Title");
+        Step4BodyText.Text = Text("Main.Guide.Step4.Body");
+        Step5TitleText.Text = Text("Main.Guide.Step5.Title");
+        Step5BodyText.Text = Text("Main.Guide.Step5.Body");
+        RecentTitleText.Text = Text("Main.Recent.Title");
+        ClearRecordsButton.Content = Text("Main.Button.ClearRecords");
+        TimeColumn.Header = Text("Main.Grid.Time");
+        SenderColumn.Header = Text("Main.Grid.Sender");
+        CodeColumn.Header = Text("Main.Grid.Code");
+        CopiedColumn.Header = Text("Main.Grid.Copied");
+        ToastColumn.Header = Text("Main.Grid.Toast");
+
+        foreach (var record in RecentRecords)
+        {
+            record.ApplyLanguage(_settings.Language);
+        }
+
+        UpdateTrayMenuState();
+        RefreshStatusText();
+        UpdateRecentSummary();
+    }
+
+    private void SetStatus(string key, params object?[] args)
+    {
+        _statusKey = key;
+        _statusArgs = args;
+        RefreshStatusText();
+    }
+
+    private void RefreshStatusText()
+    {
+        StatusText = _statusArgs.Length == 0
+            ? Text(_statusKey)
+            : FormatText(_statusKey, _statusArgs);
+    }
+
+    private string Text(string key)
+    {
+        return LocalizationService.Text(_settings.Language, key);
+    }
+
+    private string FormatText(string key, params object?[] args)
+    {
+        return LocalizationService.Format(_settings.Language, key, args);
     }
 
     private static System.Drawing.Icon GetTrayIcon()
@@ -462,8 +629,11 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     {
         if (WindowState == WindowState.Minimized)
         {
-            Hide();
+            CaptureRestoreBounds();
+            return;
         }
+
+        CaptureCurrentNormalBounds();
     }
 
     private void Window_Closing(object? sender, CancelEventArgs e)

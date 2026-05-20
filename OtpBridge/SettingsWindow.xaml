@@ -20,8 +20,8 @@
                 </LinearGradientBrush>
             </Border.Background>
             <StackPanel>
-                <TextBlock Text="设置" FontSize="23" FontWeight="SemiBold" />
-                <TextBlock Text="只保存配置，不保存短信全文。端口或 Token 改动后，需要同步更新 iPhone 快捷指令。"
+                <TextBlock x:Name="SettingsTitleText" Text="设置" FontSize="23" FontWeight="SemiBold" />
+                <TextBlock x:Name="SettingsSubtitleText" Text="只保存配置，不保存短信全文。端口或 Token 改动后，需要同步更新 iPhone 快捷指令。"
                            Foreground="{DynamicResource TextSecondaryBrush}"
                            TextWrapping="Wrap"
                            Margin="0,5,0,0" />
@@ -30,8 +30,8 @@
 
         <Border DockPanel.Dock="Bottom" Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrushSoft}" BorderThickness="0,1,0,0" Padding="16">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                <Button Content="保存" Click="Save_Click" />
-                <Button Content="取消" Click="Cancel_Click" Style="{StaticResource SecondaryButtonStyle}" Margin="0" />
+                <Button x:Name="SaveButton" Content="保存" Click="Save_Click" />
+                <Button x:Name="CancelButton" Content="取消" Click="Cancel_Click" Style="{StaticResource SecondaryButtonStyle}" Margin="0" />
             </StackPanel>
         </Border>
 
@@ -57,9 +57,10 @@
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
 
-                    <TextBlock Text="设置文件" Grid.ColumnSpan="2" FontSize="17" FontWeight="SemiBold" />
+                    <TextBlock x:Name="ConfigPathLabelText" Text="设置文件" Grid.ColumnSpan="2" FontSize="17" FontWeight="SemiBold" />
                     <TextBlock x:Name="ConfigPathText"
                                Grid.Row="1"
                                Grid.ColumnSpan="2"
@@ -67,53 +68,68 @@
                                Foreground="{DynamicResource TextSecondaryBrush}"
                                Margin="0,6,0,18" />
 
-                    <TextBlock Grid.Row="2" Text="监听端口" VerticalAlignment="Center" />
+                    <TextBlock x:Name="LanguageLabelText" Grid.Row="2" Text="界面语言" VerticalAlignment="Top" Margin="0,8,0,0" />
                     <StackPanel Grid.Row="2" Grid.Column="1">
-                        <TextBox x:Name="PortBox" />
-                        <TextBlock Text="默认 18080。若端口已被其他程序占用，OtpBridge 会自动改用下一个可用端口，并在主窗口显示新地址。"
+                        <ComboBox x:Name="LanguageBox"
+                                  Width="180"
+                                  MinHeight="34"
+                                  HorizontalAlignment="Left"
+                                  VerticalContentAlignment="Center"
+                                  SelectionChanged="LanguageBox_SelectionChanged" />
+                        <TextBlock x:Name="LanguageHintText"
+                                   Text="默认中文。保存后，主窗口、设置、托盘和提示文字会使用所选语言。"
                                    Foreground="{DynamicResource TextSecondaryBrush}"
                                    TextWrapping="Wrap"
                                    Margin="0,5,0,0" />
                     </StackPanel>
 
-                    <TextBlock Grid.Row="3" Text="API Token" VerticalAlignment="Top" Margin="0,18,0,0" />
+                    <TextBlock x:Name="PortLabelText" Grid.Row="3" Text="监听端口" VerticalAlignment="Center" Margin="0,18,0,0" />
                     <StackPanel Grid.Row="3" Grid.Column="1" Margin="0,18,0,0">
+                        <TextBox x:Name="PortBox" />
+                        <TextBlock x:Name="PortHintText" Text="默认 18080。若端口已被其他程序占用，OtpBridge 会自动改用下一个可用端口，并在主窗口显示新地址。"
+                                   Foreground="{DynamicResource TextSecondaryBrush}"
+                                   TextWrapping="Wrap"
+                                   Margin="0,5,0,0" />
+                    </StackPanel>
+
+                    <TextBlock x:Name="TokenLabelText" Grid.Row="4" Text="API Token" VerticalAlignment="Top" Margin="0,18,0,0" />
+                    <StackPanel Grid.Row="4" Grid.Column="1" Margin="0,18,0,0">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
                             <TextBox x:Name="TokenBox" FontFamily="Consolas" />
-                            <Button Grid.Column="1" Content="自动生成" Click="GenerateToken_Click" Margin="10,0,0,0" />
+                            <Button x:Name="GenerateTokenButton" Grid.Column="1" Content="自动生成" Click="GenerateToken_Click" Margin="10,0,0,0" />
                         </Grid>
-                        <TextBlock Text="重新生成后，iPhone 快捷指令里的 Authorization 也要改成新的 Bearer Token。"
+                        <TextBlock x:Name="TokenHintText" Text="重新生成后，iPhone 快捷指令里的 Authorization 也要改成新的 Bearer Token。"
                                    Foreground="{DynamicResource TextSecondaryBrush}"
                                    TextWrapping="Wrap"
                                    Margin="0,5,0,0" />
                     </StackPanel>
 
-                    <TextBlock Grid.Row="4" Text="自动复制" VerticalAlignment="Center" Margin="0,20,0,0" />
-                    <CheckBox Grid.Row="4" Grid.Column="1" x:Name="AutoCopyBox" Content="收到验证码后写入剪贴板" VerticalAlignment="Center" Margin="0,20,0,0" />
+                    <TextBlock x:Name="AutoCopyLabelText" Grid.Row="5" Text="自动复制" VerticalAlignment="Center" Margin="0,20,0,0" />
+                    <CheckBox Grid.Row="5" Grid.Column="1" x:Name="AutoCopyBox" Content="收到验证码后写入剪贴板" VerticalAlignment="Center" Margin="0,20,0,0" />
 
-                    <TextBlock Grid.Row="5" Text="右下角通知" VerticalAlignment="Center" Margin="0,18,0,0" />
-                    <CheckBox Grid.Row="5" Grid.Column="1" x:Name="ShowToastBox" Content="收到验证码后弹出 Windows 提示" VerticalAlignment="Center" Margin="0,18,0,0" />
+                    <TextBlock x:Name="ShowToastLabelText" Grid.Row="6" Text="右下角通知" VerticalAlignment="Center" Margin="0,18,0,0" />
+                    <CheckBox Grid.Row="6" Grid.Column="1" x:Name="ShowToastBox" Content="收到验证码后弹出 Windows 提示" VerticalAlignment="Center" Margin="0,18,0,0" />
 
-                    <TextBlock Grid.Row="6" Text="开机自启动" VerticalAlignment="Center" Margin="0,18,0,0" />
-                    <CheckBox Grid.Row="6" Grid.Column="1" x:Name="StartWithWindowsBox" Content="登录 Windows 后自动启动并最小化到托盘" VerticalAlignment="Center" Margin="0,18,0,0" />
+                    <TextBlock x:Name="StartWithWindowsLabelText" Grid.Row="7" Text="开机自启动" VerticalAlignment="Center" Margin="0,18,0,0" />
+                    <CheckBox Grid.Row="7" Grid.Column="1" x:Name="StartWithWindowsBox" Content="登录 Windows 后自动启动并最小化到托盘" VerticalAlignment="Center" Margin="0,18,0,0" />
 
-                    <TextBlock Grid.Row="7" Text="最近记录数量" VerticalAlignment="Top" Margin="0,18,0,0" />
-                    <StackPanel Grid.Row="7" Grid.Column="1" Margin="0,18,0,0">
-                        <TextBox x:Name="RecentCountBox" />
-                        <TextBlock Text="只影响内存里的最近记录，不会把短信全文写入磁盘。"
-                                   Foreground="{DynamicResource TextSecondaryBrush}"
-                                   TextWrapping="Wrap"
-                                   Margin="0,5,0,0" />
-                    </StackPanel>
-
-                    <TextBlock Grid.Row="8" Text="自定义正则" VerticalAlignment="Top" Margin="0,18,0,0" />
+                    <TextBlock x:Name="RecentCountLabelText" Grid.Row="8" Text="最近记录数量" VerticalAlignment="Top" Margin="0,18,0,0" />
                     <StackPanel Grid.Row="8" Grid.Column="1" Margin="0,18,0,0">
+                        <TextBox x:Name="RecentCountBox" />
+                        <TextBlock x:Name="RecentCountHintText" Text="只影响内存里的最近记录，不会把短信全文写入磁盘。"
+                                   Foreground="{DynamicResource TextSecondaryBrush}"
+                                   TextWrapping="Wrap"
+                                   Margin="0,5,0,0" />
+                    </StackPanel>
+
+                    <TextBlock x:Name="CustomRegexLabelText" Grid.Row="9" Text="自定义正则" VerticalAlignment="Top" Margin="0,18,0,0" />
+                    <StackPanel Grid.Row="9" Grid.Column="1" Margin="0,18,0,0">
                         <TextBox x:Name="CustomRegexBox" MinHeight="76" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" />
-                        <TextBlock Text="可留空。若包含捕获组，将优先使用最后一个非空捕获组作为验证码。"
+                        <TextBlock x:Name="CustomRegexHintText" Text="可留空。若包含捕获组，将优先使用最后一个非空捕获组作为验证码。"
                                    Foreground="{DynamicResource TextSecondaryBrush}"
                                    TextWrapping="Wrap"
                                    Margin="0,6,0,0" />

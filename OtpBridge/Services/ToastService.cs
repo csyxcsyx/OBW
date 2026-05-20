@@ -19,8 +19,10 @@ public sealed class ToastService
                 $xml = New-Object Windows.Data.Xml.Dom.XmlDocument
                 $xml.LoadXml($xmlText)
                 $toast = [Windows.UI.Notifications.ToastNotification]::new($xml)
-                [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier('OtpBridge').Show($toast)
-                """.Replace("__XML__", encodedXml, StringComparison.Ordinal);
+                [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier('__APP_NAME__').Show($toast)
+                """
+                .Replace("__XML__", encodedXml, StringComparison.Ordinal)
+                .Replace("__APP_NAME__", AppInfo.Name, StringComparison.Ordinal);
 
             var startInfo = new ProcessStartInfo("powershell.exe")
             {

@@ -1,12 +1,14 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using OtpBridge.Services;
 
 namespace OtpBridge.Models;
 
 public sealed class OtpRecord : INotifyPropertyChanged
 {
     private bool _copied;
-    private string _toastText = string.Empty;
+    private string _language = AppSettings.DefaultLanguage;
+    private string _toastKey = "Main.Toast.Disabled";
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -34,21 +36,38 @@ public sealed class OtpRecord : INotifyPropertyChanged
         }
     }
 
-    public string CopiedText => Copied ? "已复制" : "未复制";
+    public string CopiedText => LocalizationService.Text(
+        _language,
+        Copied ? "Main.Record.Copied" : "Main.Record.NotCopied");
 
-    public string ToastText
+    public string ToastText => LocalizationService.Text(_language, _toastKey);
+
+    public string ToastKey
     {
-        get => _toastText;
+        get => _toastKey;
         set
         {
-            if (string.Equals(_toastText, value, StringComparison.Ordinal))
+            if (string.Equals(_toastKey, value, StringComparison.Ordinal))
             {
                 return;
             }
 
-            _toastText = value;
-            OnPropertyChanged();
+            _toastKey = value;
+            OnPropertyChanged(nameof(ToastText));
         }
+    }
+
+    public void ApplyLanguage(string language)
+    {
+        var normalizedLanguage = LocalizationService.NormalizeLanguage(language);
+        if (string.Equals(_language, normalizedLanguage, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        _language = normalizedLanguage;
+        OnPropertyChanged(nameof(CopiedText));
+        OnPropertyChanged(nameof(ToastText));
     }
 
     private void OnPropertyChanged([CallerMemberName] string? propertyName = null)

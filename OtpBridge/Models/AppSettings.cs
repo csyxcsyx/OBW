@@ -2,6 +2,8 @@ namespace OtpBridge.Models;
 
 public sealed class AppSettings
 {
+    public const string DefaultLanguage = "zh-CN";
+
     public const int DefaultPort = 18080;
 
     public const int DefaultRecentRecordCount = 20;
@@ -18,6 +20,8 @@ public sealed class AppSettings
 
     public bool StartWithWindows { get; set; } = true;
 
+    public string Language { get; set; } = DefaultLanguage;
+
     public int RecentRecordCount { get; set; } = DefaultRecentRecordCount;
 
     public string? CustomCodeRegex { get; set; }
@@ -31,6 +35,7 @@ public sealed class AppSettings
             AutoCopy = AutoCopy,
             ShowToast = ShowToast,
             StartWithWindows = StartWithWindows,
+            Language = Language,
             RecentRecordCount = RecentRecordCount,
             CustomCodeRegex = CustomCodeRegex
         };

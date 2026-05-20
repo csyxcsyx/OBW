@@ -41,7 +41,7 @@ public sealed class LocalHttpServer : IAsyncDisposable
 
         var app = builder.Build();
 
-        app.MapGet("/", () => Results.Json(new { ok = true, app = "OtpBridge" }));
+        app.MapGet("/", () => Results.Json(new { ok = true, app = AppInfo.Name, version = AppInfo.DisplayVersion }));
         app.MapGet("/health", () => Results.Json(new { ok = true }));
         app.MapPost("/api/sms", async (HttpContext context) => await HandleSmsAsync(context));
 

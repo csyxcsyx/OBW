@@ -1,15 +1,18 @@
 # OtpBridge
 
-OtpBridge 是一个 Windows 本地验证码桥接工具。
+[中文](README.md) | [English](README_EN.md)
 
-## 写在前面的话
+OtpBridge 是一个 Windows 本地验证码桥接工具：iPhone 收到验证码短信后，通过 iOS「快捷指令」把短信正文发送到 Windows；OtpBridge 负责提取验证码、复制到剪贴板，并在桌面右下角提醒。
 
-关于为什么做这个工具：
-因为目前 Windows 端的「连接手机」软件与 iOS 端的交互并不好，所以......
+> **重要提醒：iPhone 和 Windows 电脑必须在同一个局域网内。**
+>
+> 最常见的可用场景是二者连接同一个 Wi-Fi，或处在同一个家庭/办公室局域网。若 iPhone 使用蜂窝网络、访客网络，或与 Windows 不在同一网段，快捷指令通常无法访问 OtpBridge。
 
-这个工具很好地实现了：iPhone 收到验证码短信后，通过 iOS「快捷指令」把短信正文发送到 Windows 电脑；OtpBridge 会提取验证码、复制到剪贴板，并在右下角弹出提示。
+## 项目定位
 
-它不依赖微软「连接手机」、Phone Link 或任何微软官方手机同步软件。
+OtpBridge 适合希望在 Windows 上快速接收 iPhone 短信验证码的用户。它不依赖微软「连接手机」、Phone Link 或其他手机同步软件，只使用局域网 HTTP 请求完成桥接。
+
+默认配置尽量偏向「开箱即用」：首次运行会生成 API Token、显示局域网访问地址，并在收到验证码后自动复制。最近记录只保存在内存中，默认不把短信全文写入磁盘。
 
 <div align="center">
   <img src="OBW_1.png" alt="程序总览图" width="1700" />
@@ -25,28 +28,29 @@ OtpBridge 是一个 Windows 本地验证码桥接工具。
   验证码弹出图
 </div>
 
-## 功能
+## 功能概览
 
 - Windows 客户端：C#、.NET 8、WPF。
-- 内置轻量 HTTP 服务：默认监听 `0.0.0.0:18080`。
-- 接口：`POST /api/sms`，使用 Bearer Token 校验。
+- 内置轻量 HTTP 服务，默认监听 `0.0.0.0:18080`。
+- `POST /api/sms` 接收短信正文，使用 Bearer Token 校验。
 - 自动提取 4 到 8 位数字或字母验证码。
-- 可自动复制验证码到剪贴板。
-- 可弹出 Windows 右下角通知，并带托盘提示兜底。
-- 托盘常驻，右键可打开设置、复制最近验证码、查看记录、勾选开机自启动、退出。
+- 支持自动复制验证码到剪贴板。
+- 支持 Windows 右下角通知，并使用托盘提示作为兜底。
+- 托盘常驻：可打开设置、复制最近验证码、查看记录、切换开机自启动、退出。
 - 默认开机自启动，登录 Windows 后最小化到托盘。
-- 单实例运行：如果已经在托盘运行，再次双击不会再启动第二个进程。
-- 如果默认端口被占用，会自动改用下一个可用端口，并在主窗口显示新的监听地址。
-- 最近记录只保存在内存中，默认不把短信全文写入磁盘。
-- 配置文件保存到：`%AppData%\OtpBridge\config.json`。
+- 单实例运行，避免重复启动多个进程。
+- 默认端口被占用时，会自动改用下一个可用端口，并在主窗口显示新地址。
+- 最近记录只保存在内存中，默认不写入短信全文。
+- 支持中文/英文界面切换，默认中文。
+- 配置文件保存到 `%AppData%\OtpBridge\config.json`。
 
-## 推荐使用方式
+## 安装与运行
 
-### 普通用户：使用便携版
+### 便携版
 
-直接在 Releases 找到最新的压缩包（.zip）下载，解压运行即可。
+从 Releases 下载最新 `.zip` 压缩包，解压后运行 `OtpBridge.exe` 即可。正常情况下不需要额外安装 .NET。
 
-### 开发者：从源码生成 exe
+### 从源码发布
 
 在项目根目录运行：
 
@@ -61,7 +65,7 @@ dist\OtpBridge\OtpBridge.exe
 dist\OtpBridge-Portable-win-x64.zip
 ```
 
-`dist\OtpBridge\OtpBridge.exe` 是自包含单文件 exe。正常情况下，用户双击这个 exe 就能运行，不需要额外安装 .NET。
+`dist\OtpBridge\OtpBridge.exe` 是自包含单文件 exe。便携压缩包可直接分发给用户。
 
 开发调试时也可以运行：
 
@@ -69,15 +73,15 @@ dist\OtpBridge-Portable-win-x64.zip
 dotnet run --project .\OtpBridge\OtpBridge.csproj
 ```
 
-### 清理历史构建文件
+### 清理生成物
 
-如果想清理旧的 `bin`、`obj`、`dist`、临时发布目录，运行：
+如果需要清理旧的 `bin`、`obj`、`dist` 和临时发布目录，运行：
 
 ```powershell
 .\clean-generated.cmd
 ```
 
-这个脚本只删除生成物，不会删除源码，也不会删除 `%AppData%\OtpBridge` 里的用户配置。
+这个脚本只删除生成物，不会删除源码，也不会删除 `%AppData%\OtpBridge` 中的用户配置。
 
 ## 第一次打开 Windows 客户端
 
@@ -214,12 +218,13 @@ MVP 只需要 `message` 字段。
 
 测试成功后，再把 `message` 的值改回「输入快捷指令的信息」。
 
-## 以后重启还需要重新配置 iPhone 吗？
+## 长期使用建议
 
-通常不需要。
+通常不需要在每次重启后重新配置 iPhone。
 
-iOS 快捷指令长期有效的前提是：
+快捷指令长期有效的前提是：
 
+- iPhone 和 Windows 仍在同一个局域网内。
 - Windows 局域网 IP 不变。
 - 监听端口不变，默认 `18080`。
 - API Token 不变。
@@ -230,10 +235,11 @@ OtpBridge 会把设置保存在：
 %AppData%\OtpBridge\config.json
 ```
 
-开机自启动默认开启。Windows 登录后，OtpBridge 会自动启动并最小化到托盘，iPhone 可以继续使用原来的 URL 和 Token。
+开机自启动默认开启。Windows 登录后，OtpBridge 会自动启动并最小化到托盘。只要局域网地址、端口和 Token 没有变化，iPhone 可以继续使用原来的 URL 和 Token。
 
-需要重新修改 iPhone 快捷指令的情况：
+需要重新修改 iPhone 快捷指令的常见情况：
 
+- iPhone 和 Windows 不再处于同一个局域网。
 - Windows 局域网 IP 变了。
 - 你修改了监听端口。
 - 你重新生成了 API Token。
@@ -250,12 +256,13 @@ OtpBridge 会把设置保存在：
 | 自动复制 | 开启 | 收到验证码后写入剪贴板。 |
 | 右下角通知 | 开启 | 收到验证码后弹出 Windows 通知；Toast 不可用时用托盘提示兜底。 |
 | 开机自启动 | 开启 | 当前用户登录 Windows 后自动启动并最小化到托盘。 |
+| 界面语言 | 中文 | 可在中文和英文之间切换。 |
 | 最近记录数量 | `20` | 只保存在内存里，不写短信全文。 |
 | 自定义正则 | 空 | 特殊短信格式可填写。若有捕获组，优先使用最后一个非空捕获组。 |
 
 ## 托盘菜单
 
-右键系统托盘里的 OtpBridge 图标，可以：
+右键系统托盘里的 OtpBridge 图标，可以执行：
 
 - 打开设置
 - 复制最近验证码
@@ -310,6 +317,12 @@ Request:
 GET /health
 ```
 
+根路径也会返回应用名和版本信息：
+
+```text
+GET /
+```
+
 ## 验证码提取规则
 
 优先匹配关键词附近的验证码：
@@ -330,7 +343,7 @@ GET /health
 
 ### iPhone 访问失败
 
-优先检查：
+优先检查网络条件。**iPhone 和 Windows 必须在同一个局域网内**，这是访问成功的前提。
 
 - iPhone 和 Windows 是否在同一个 Wi-Fi 或同一个局域网。
 - iPhone Safari 是否能打开 `http://<Windows局域网IP>:18080/health`。
@@ -342,8 +355,8 @@ GET /health
 
 这通常有两种情况：
 
-- OtpBridge 已经在右下角托盘运行，你又双击打开了第二次。新版会拦截第二个实例，并提示去托盘查看。
-- 电脑上其他程序正在使用 `18080`。新版会自动改用后续可用端口，例如 `18081`，并保存到配置文件。iOS 快捷指令需要使用主窗口显示的新地址。
+- OtpBridge 已经在右下角托盘运行，你又双击打开了第二次。程序会拦截第二个实例，并提示去托盘查看。
+- 电脑上其他程序正在使用 `18080`。程序会自动改用后续可用端口，例如 `18081`，并保存到配置文件。iOS 快捷指令需要使用主窗口显示的新地址。
 
 ### 返回 `unauthorized`
 
@@ -370,4 +383,11 @@ Windows 收到了短信正文，但没有提取到验证码。请确认 `message
 ```powershell
 .\clean-generated.cmd
 .\publish-win-x64.cmd
+```
+
+发布完成后，以 `dist` 目录为准：
+
+```text
+dist\OtpBridge\OtpBridge.exe
+dist\OtpBridge-Portable-win-x64.zip
 ```

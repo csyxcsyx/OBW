@@ -7,6 +7,7 @@ namespace OtpBridge;
 public partial class App : System.Windows.Application
 {
     private Mutex? _singleInstanceMutex;
+    private string _language = LocalizationService.DefaultLanguage;
 
     public App()
     {
@@ -29,6 +30,7 @@ public partial class App : System.Windows.Application
 
         try
         {
+            _language = ConfigService.LoadLanguageOrDefault();
             var startMinimized = e.Args.Any(arg => string.Equals(arg, "--minimized", StringComparison.OrdinalIgnoreCase));
             if (!TryAcquireSingleInstance(startMinimized))
             {
@@ -46,8 +48,8 @@ public partial class App : System.Windows.Application
         {
             StartupLog.Error("Failed to show main window.", exception);
             System.Windows.MessageBox.Show(
-                $"OtpBridge 启动失败，详细日志：{StartupLog.FilePath}{Environment.NewLine}{Environment.NewLine}{exception.Message}",
-                "OtpBridge",
+                LocalizationService.Format(_language, "App.StartFailed", StartupLog.FilePath, Environment.NewLine, exception.Message),
+                AppInfo.Name,
                 MessageBoxButton.OK,
                 MessageBoxImage.Error);
             Shutdown(1);
@@ -64,7 +66,7 @@ public partial class App : System.Windows.Application
     private bool TryAcquireSingleInstance(bool startMinimized)
     {
         var currentUserId = System.Security.Principal.WindowsIdentity.GetCurrent().User?.Value ?? Environment.UserName;
-        var mutexName = $"Local\\OtpBridge-{currentUserId}";
+        var mutexName = $"Local\\{AppInfo.Name}-{currentUserId}";
         _singleInstanceMutex = new Mutex(initiallyOwned: true, mutexName, out var createdNew);
         if (createdNew)
         {
@@ -78,8 +80,8 @@ public partial class App : System.Windows.Application
         if (!startMinimized)
         {
             System.Windows.MessageBox.Show(
-                "OtpBridge 已经在运行。请查看右下角系统托盘里的 OtpBridge 图标；如需关闭，请右键托盘图标选择“退出”。",
-                "OtpBridge",
+                LocalizationService.Text(_language, "App.AlreadyRunning"),
+                AppInfo.Name,
                 MessageBoxButton.OK,
                 MessageBoxImage.Information);
         }
@@ -91,8 +93,8 @@ public partial class App : System.Windows.Application
     {
         StartupLog.Error("Unhandled dispatcher exception.", e.Exception);
         System.Windows.MessageBox.Show(
-            $"OtpBridge 发生未处理异常，详细日志：{StartupLog.FilePath}{Environment.NewLine}{Environment.NewLine}{e.Exception.Message}",
-            "OtpBridge",
+            LocalizationService.Format(_language, "App.UnhandledDispatcher", StartupLog.FilePath, Environment.NewLine, e.Exception.Message),
+            AppInfo.Name,
             MessageBoxButton.OK,
             MessageBoxImage.Error);
         e.Handled = true;
