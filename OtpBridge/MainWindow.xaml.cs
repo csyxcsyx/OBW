@@ -1,7 +1,10 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Globalization;
+using System.Net;
+using System.Net.NetworkInformation;
 using System.Windows;
+using System.Windows.Threading;
 using OtpBridge.Models;
 using OtpBridge.Services;
 using Forms = System.Windows.Forms;
@@ -13,6 +16,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private readonly ConfigService _configService;
     private readonly LocalHttpServer _httpServer;
     private readonly ToastService _toastService = new();
+    private readonly DispatcherTimer _addressRefreshTimer = new() { Interval = TimeSpan.FromSeconds(30) };
     private Forms.NotifyIcon? _notifyIcon;
     private Forms.ToolStripMenuItem? _startupMenuItem;
     private readonly bool _startMinimized;
@@ -21,6 +25,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private bool _isServerStarting;
     private bool _isRestoringWindowBounds;
     private Rect? _lastNormalBounds;
+    private IReadOnlyList<string> _lastLanAddressHosts = [];
     private string _listeningAddresses = string.Empty;
     private string _statusText = "正在启动...";
     private string _statusKey = "Main.Status.Starting";
@@ -41,6 +46,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         _httpServer = new LocalHttpServer(() => _settings, ProcessSmsAsync);
 
         DataContext = this;
+        SetupAddressRefresh();
         TrySetupTrayIcon();
         Title = AppInfo.WindowTitle;
         ApplyLocalization();
@@ -50,6 +56,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         SizeChanged += (_, _) => CaptureCurrentNormalBounds();
         Loaded += (_, _) => CaptureCurrentNormalBounds();
         Loaded += async (_, _) => await StartServerAsync();
+        Loaded += (_, _) => StartAddressRefreshTimer();
         Loaded += (_, _) => ApplyInitialWindowState();
         StartupLog.Info("MainWindow constructor finished.");
     }
@@ -278,17 +285,98 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     {
         try
         {
-            var urls = NetworkAddressService.GetApiUrls(_settings.Port);
+            var urls = GetStableApiUrls(_settings.Port);
             ListeningAddresses = string.Join(Environment.NewLine, urls);
         }
         catch (Exception exception)
         {
             StartupLog.Error("Failed to refresh listening addresses.", exception);
-            ListeningAddresses = $"http://127.0.0.1:{_settings.Port}/api/sms";
+            var fallbackUrls = BuildApiUrls(_lastLanAddressHosts, _settings.Port);
+            ListeningAddresses = fallbackUrls.Count > 0
+                ? string.Join(Environment.NewLine, fallbackUrls)
+                : $"http://127.0.0.1:{_settings.Port}/api/sms";
         }
 
         OnPropertyChanged(nameof(ApiToken));
         UpdateRecentSummary();
+    }
+
+    private void SetupAddressRefresh()
+    {
+        _addressRefreshTimer.Tick += (_, _) => RefreshSettingsDisplay();
+        NetworkChange.NetworkAddressChanged += OnNetworkChanged;
+        NetworkChange.NetworkAvailabilityChanged += OnNetworkAvailabilityChanged;
+    }
+
+    private void StartAddressRefreshTimer()
+    {
+        RefreshSettingsDisplay();
+        if (!_addressRefreshTimer.IsEnabled)
+        {
+            _addressRefreshTimer.Start();
+        }
+    }
+
+    private void OnNetworkChanged(object? sender, EventArgs e)
+    {
+        QueueAddressRefresh();
+    }
+
+    private void OnNetworkAvailabilityChanged(object? sender, NetworkAvailabilityEventArgs e)
+    {
+        QueueAddressRefresh();
+    }
+
+    private void QueueAddressRefresh()
+    {
+        if (Dispatcher.HasShutdownStarted || Dispatcher.HasShutdownFinished)
+        {
+            return;
+        }
+
+        _ = Dispatcher.InvokeAsync(RefreshSettingsDisplay, DispatcherPriority.Background);
+    }
+
+    private IReadOnlyList<string> GetStableApiUrls(int port)
+    {
+        var urls = NetworkAddressService.GetApiUrls(port);
+        var lanHosts = urls
+            .Select(TryGetUrlHost)
+            .OfType<string>()
+            .Where(host => !IsLoopbackHost(host))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+        if (lanHosts.Length > 0)
+        {
+            _lastLanAddressHosts = lanHosts;
+            return BuildApiUrls(_lastLanAddressHosts, port);
+        }
+
+        var lastKnownUrls = BuildApiUrls(_lastLanAddressHosts, port);
+        return lastKnownUrls.Count > 0 ? lastKnownUrls : urls;
+    }
+
+    private static IReadOnlyList<string> BuildApiUrls(IEnumerable<string> hosts, int port)
+    {
+        return hosts
+            .Select(host => $"http://{host}:{port}/api/sms")
+            .ToArray();
+    }
+
+    private static string? TryGetUrlHost(string url)
+    {
+        return Uri.TryCreate(url, UriKind.Absolute, out var uri) ? uri.Host : null;
+    }
+
+    private static bool IsLoopbackHost(string host)
+    {
+        if (string.Equals(host, "localhost", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        return IPAddress.TryParse(host, out var address) && IPAddress.IsLoopback(address);
     }
 
     private void OpenSettings()
@@ -650,6 +738,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     protected override async void OnClosed(EventArgs e)
     {
         StartupLog.Info("MainWindow closed.");
+        _addressRefreshTimer.Stop();
+        NetworkChange.NetworkAddressChanged -= OnNetworkChanged;
+        NetworkChange.NetworkAvailabilityChanged -= OnNetworkAvailabilityChanged;
         _notifyIcon?.Dispose();
         await _httpServer.DisposeAsync();
         base.OnClosed(e);
