@@ -20,7 +20,7 @@ public static class AppInfo
         var version = typeof(AppInfo).Assembly
             .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
             ?.InformationalVersion
-            ?? "1.1";
+            ?? "1.2";
 
         return version.Split('+', 2)[0];
     }

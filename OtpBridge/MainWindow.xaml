@@ -54,7 +54,7 @@
                                 Margin="12,6,0,4"
                                 VerticalAlignment="Center">
                             <TextBlock x:Name="VersionText"
-                                       Text="v1.1"
+                                       Text="v1.2"
                                        FontFamily="Consolas"
                                        FontSize="13"
                                        FontWeight="SemiBold"
