@@ -36,6 +36,7 @@ dotnet publish ".\OtpBridge\OtpBridge.csproj" ^
   --self-contained true ^
   -p:PublishSingleFile=true ^
   -p:IncludeNativeLibrariesForSelfExtract=true ^
+  -p:EnableCompressionInSingleFile=true ^
   -p:NuGetAudit=false ^
   -p:BaseOutputPath=%BUILD_ROOT%\bin\ ^
   -p:BaseIntermediateOutputPath=%BUILD_OBJ%\ ^
