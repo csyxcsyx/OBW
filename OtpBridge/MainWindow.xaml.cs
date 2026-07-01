@@ -17,9 +17,11 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private readonly LocalHttpServer _httpServer;
     private readonly ToastService _toastService = new();
     private readonly DispatcherTimer _addressRefreshTimer = new() { Interval = TimeSpan.FromSeconds(30) };
+    private readonly SemaphoreSlim _clipboardCopyGate = new(1, 1);
     private Forms.NotifyIcon? _notifyIcon;
     private Forms.ToolStripMenuItem? _startupMenuItem;
     private readonly bool _startMinimized;
+    private long _copyRequestVersion;
     private AppSettings _settings;
     private bool _exitRequested;
     private bool _isServerStarting;
@@ -202,44 +204,112 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         }
 
         var code = extraction.Code;
-        var copied = false;
-        if (settings.AutoCopy)
-        {
-            copied = await CopyToClipboardAsync(code);
-        }
-
         var toastKey = "Main.Toast.Disabled";
         if (settings.ShowToast)
         {
-            var message = copied
-                ? LocalizationService.Format(settings.Language, "Main.Toast.ReceivedCopied", code)
-                : LocalizationService.Format(settings.Language, "Main.Toast.Received", code);
-            await Dispatcher.InvokeAsync(() =>
-            {
-                ShowTrayTip(5000, message, Forms.ToolTipIcon.Info);
-                _ = Task.Run(() => _toastService.ShowToast(AppInfo.Name, message));
-            });
             toastKey = "Main.Toast.Shown";
         }
 
+        var record = new OtpRecord
+        {
+            ReceivedAt = ParseReceivedAt(request.ReceivedAt),
+            Sender = string.IsNullOrWhiteSpace(request.Sender) ? "-" : request.Sender.Trim(),
+            Code = code,
+            Copied = false,
+            ToastKey = toastKey
+        };
+        record.ApplyLanguage(settings.Language);
+
+        var toastMessage = LocalizationService.Format(
+            settings.Language,
+            settings.AutoCopy ? "Main.Toast.ReceivedCopying" : "Main.Toast.Received",
+            code);
+
         await Dispatcher.InvokeAsync(() =>
         {
-            var record = new OtpRecord
-            {
-                ReceivedAt = ParseReceivedAt(request.ReceivedAt),
-                Sender = string.IsNullOrWhiteSpace(request.Sender) ? "-" : request.Sender.Trim(),
-                Code = code,
-                Copied = copied,
-                ToastKey = toastKey
-            };
             record.ApplyLanguage(_settings.Language);
             RecentRecords.Insert(0, record);
 
             TrimRecentRecords();
             UpdateRecentSummary();
+
+            if (settings.ShowToast)
+            {
+                ShowTrayTip(5000, toastMessage, Forms.ToolTipIcon.Info);
+                QueueWindowsToast(toastMessage);
+            }
         });
 
+        if (settings.AutoCopy)
+        {
+            var copyRequestVersion = Interlocked.Increment(ref _copyRequestVersion);
+            _ = CompleteAutoCopyAsync(code, record, settings.Language, copyRequestVersion);
+        }
+
         return SmsProcessingResult.Ok(code);
+    }
+
+    private void QueueWindowsToast(string message)
+    {
+        _ = Task.Run(() =>
+        {
+            try
+            {
+                _toastService.ShowToast(AppInfo.Name, message);
+            }
+            catch (Exception exception)
+            {
+                StartupLog.Error("Queued toast notification failed.", exception);
+            }
+        });
+    }
+
+    private async Task CompleteAutoCopyAsync(
+        string code,
+        OtpRecord record,
+        string language,
+        long copyRequestVersion)
+    {
+        try
+        {
+            bool copied;
+            await _clipboardCopyGate.WaitAsync();
+            try
+            {
+                if (copyRequestVersion != Volatile.Read(ref _copyRequestVersion))
+                {
+                    return;
+                }
+
+                copied = await CopyToClipboardAsync(code);
+            }
+            finally
+            {
+                _clipboardCopyGate.Release();
+            }
+
+            if (Dispatcher.HasShutdownStarted || Dispatcher.HasShutdownFinished)
+            {
+                return;
+            }
+
+            await Dispatcher.InvokeAsync(() =>
+            {
+                if (RecentRecords.Contains(record))
+                {
+                    record.Copied = copied;
+                }
+
+                if (!copied)
+                {
+                    ShowTrayTip(3000, LocalizationService.Text(language, "Main.Copy.Failed"), Forms.ToolTipIcon.Warning);
+                }
+            });
+        }
+        catch (Exception exception)
+        {
+            StartupLog.Error("Background auto-copy failed.", exception);
+        }
     }
 
     private void TrySetupTrayIcon()
